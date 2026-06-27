@@ -1,3 +1,4 @@
+cat > /mnt/user-data/outputs/index.html << 'ENDOFFILE'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,18 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: {
-            'brand-orange': '#ff5500',
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-          }
+          colors: { 'brand-orange': '#ff5500' },
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] }
         }
       }
     }
@@ -69,9 +65,7 @@
       cursor: pointer;
       border: none;
     }
-    input[type=range].accent-brand-orange {
-      accent-color: #ff5500;
-    }
+    input[type=range].accent-brand-orange { accent-color: #ff5500; }
 
     * { box-sizing: border-box; }
     body { margin: 0; background: #f0f0f0; }
@@ -80,47 +74,16 @@
 <body>
   <div id="root"></div>
 
-  <!-- React + ReactDOM via CDN -->
-  <!-- AFTER (fix) -->
-<script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
 
-  <!-- AFTER -->
-<script type="text/babel" data-presets="env,react">
+  <script type="text/babel">
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-    // ─── Helper: Create Lucide icon as React element ───────────────────────────
-    function Icon({ name, className, style }) {
-      const ref = useRef(null);
-      useEffect(() => {
-        if (ref.current && window.lucide) {
-          ref.current.innerHTML = '';
-          const iconData = window.lucide[name];
-          if (iconData) {
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            const [defaultAttrs, ...children] = iconData;
-            Object.entries({ ...defaultAttrs, class: className || '', style: '' }).forEach(([k, v]) => {
-              if (k !== 'style') svg.setAttribute(k, v);
-            });
-            if (style) Object.assign(svg.style, style);
-            children.forEach(([tag, attrs]) => {
-              const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-              Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-              svg.appendChild(el);
-            });
-            ref.current.appendChild(svg);
-          }
-        }
-      }, [name, className]);
-      return React.createElement('span', { ref, style: { display: 'inline-flex', alignItems: 'center' } });
-    }
-
-    // Simple SVG icon component using lucide paths
     function LucideIcon({ name, size = 20, color = 'currentColor', className = '', style = {} }) {
       const icons = {
-        Play: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${className}" style="${Object.entries(style).map(([k,v])=>k.replace(/([A-Z])/g,'-$1').toLowerCase()+':'+v).join(';')}"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+        Play: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${className}"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
         Pause: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${className}"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
         SkipBack: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${className}"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`,
         SkipForward: `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="${className}"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`,
@@ -154,27 +117,26 @@
       });
     }
 
-    // ─── SynthwaveEngine ────────────────────────────────────────────────────────
     class SynthwaveEngine {
-      constructor(tempo = 112, duration = 225) {
+      constructor(tempo, duration) {
         this.audioCtx = null;
         this.masterVolumeNode = null;
         this.analyserNode = null;
         this.isRunning = false;
         this.nextNoteTime = 0.0;
         this.stepIndex = 0;
-        this.tempo = tempo;
+        this.tempo = tempo || 112;
         this.timerId = null;
         this.onStepCallback = null;
         this.onTimeUpdateCallback = null;
         this.currentPlaytime = 0;
         this.lastSystemTime = 0;
-        this.totalDuration = duration;
+        this.totalDuration = duration || 225;
         this.intervalTimer = null;
       }
       init() {
         if (this.audioCtx) return;
-        const AudioContextClass = (window.AudioContext || window.webkitAudioContext);
+        var AudioContextClass = (window.AudioContext || window.webkitAudioContext);
         this.audioCtx = new AudioContextClass();
         this.masterVolumeNode = this.audioCtx.createGain();
         this.masterVolumeNode.gain.value = 0.5;
@@ -205,14 +167,15 @@
         this.nextNoteTime = this.audioCtx.currentTime;
         this.stepIndex = 0;
         this.schedulerLoop();
-        this.intervalTimer = setInterval(() => {
-          if (!this.isRunning) return;
-          const now = Date.now();
-          const delta = (now - this.lastSystemTime) / 1000;
-          this.lastSystemTime = now;
-          this.currentPlaytime += delta;
-          if (this.currentPlaytime >= this.totalDuration) this.currentPlaytime = 0;
-          if (this.onTimeUpdateCallback) this.onTimeUpdateCallback(this.currentPlaytime);
+        var self = this;
+        this.intervalTimer = setInterval(function() {
+          if (!self.isRunning) return;
+          var now = Date.now();
+          var delta = (now - self.lastSystemTime) / 1000;
+          self.lastSystemTime = now;
+          self.currentPlaytime += delta;
+          if (self.currentPlaytime >= self.totalDuration) self.currentPlaytime = 0;
+          if (self.onTimeUpdateCallback) self.onTimeUpdateCallback(self.currentPlaytime);
         }, 100);
       }
       stop() {
@@ -222,16 +185,17 @@
       }
       schedulerLoop() {
         if (!this.isRunning || !this.audioCtx) return;
-        const scheduleAheadTime = 0.1;
+        var scheduleAheadTime = 0.1;
         while (this.nextNoteTime < this.audioCtx.currentTime + scheduleAheadTime) {
           this.scheduleNote(this.stepIndex, this.nextNoteTime);
           this.advanceNote();
         }
-        this.timerId = setTimeout(() => this.schedulerLoop(), 25);
+        var self = this;
+        this.timerId = setTimeout(function() { self.schedulerLoop(); }, 25);
       }
       advanceNote() {
-        const secondsPerBeat = 60.0 / this.tempo;
-        const secondsPerStep = secondsPerBeat / 4;
+        var secondsPerBeat = 60.0 / this.tempo;
+        var secondsPerStep = secondsPerBeat / 4;
         this.nextNoteTime += secondsPerStep;
         this.stepIndex = (this.stepIndex + 1) % 16;
       }
@@ -245,8 +209,8 @@
       }
       playKick(time) {
         if (!this.audioCtx || !this.masterVolumeNode) return;
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
+        var osc = this.audioCtx.createOscillator();
+        var gain = this.audioCtx.createGain();
         osc.connect(gain); gain.connect(this.masterVolumeNode);
         osc.frequency.setValueAtTime(150, time);
         osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.12);
@@ -256,20 +220,20 @@
       }
       playSnare(time) {
         if (!this.audioCtx || !this.masterVolumeNode) return;
-        const bufferSize = this.audioCtx.sampleRate * 0.15;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noiseSource = this.audioCtx.createBufferSource();
+        var bufferSize = this.audioCtx.sampleRate * 0.15;
+        var buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+        var data = buffer.getChannelData(0);
+        for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        var noiseSource = this.audioCtx.createBufferSource();
         noiseSource.buffer = buffer;
-        const noiseFilter = this.audioCtx.createBiquadFilter();
+        var noiseFilter = this.audioCtx.createBiquadFilter();
         noiseFilter.type = 'bandpass'; noiseFilter.frequency.value = 1000;
-        const noiseGain = this.audioCtx.createGain();
+        var noiseGain = this.audioCtx.createGain();
         noiseGain.gain.setValueAtTime(0.4, time);
         noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
         noiseSource.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(this.masterVolumeNode);
-        const osc = this.audioCtx.createOscillator();
-        const oscGain = this.audioCtx.createGain();
+        var osc = this.audioCtx.createOscillator();
+        var oscGain = this.audioCtx.createGain();
         osc.type = 'triangle'; osc.frequency.setValueAtTime(180, time);
         oscGain.gain.setValueAtTime(0.3, time);
         oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
@@ -279,13 +243,13 @@
       }
       playBassline(step, time) {
         if (!this.audioCtx || !this.masterVolumeNode) return;
-        const chordIdx = Math.floor(this.currentPlaytime / 4) % 4;
-        const baseFreqs = [55.00, 65.41, 49.00, 43.65];
-        const baseFreq = baseFreqs[chordIdx];
-        const freq = (step % 2 === 1) ? baseFreq * 2 : baseFreq;
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        const filter = this.audioCtx.createBiquadFilter();
+        var chordIdx = Math.floor(this.currentPlaytime / 4) % 4;
+        var baseFreqs = [55.00, 65.41, 49.00, 43.65];
+        var baseFreq = baseFreqs[chordIdx];
+        var freq = (step % 2 === 1) ? baseFreq * 2 : baseFreq;
+        var osc = this.audioCtx.createOscillator();
+        var gain = this.audioCtx.createGain();
+        var filter = this.audioCtx.createBiquadFilter();
         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, time);
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(250, time);
@@ -298,25 +262,25 @@
       }
       playLeadArp(step, time) {
         if (!this.audioCtx || !this.masterVolumeNode) return;
-        const pattern = [0, 2, 4, 6, 8, 10, 12, 14];
-        if (!pattern.includes(step)) return;
-        const chordIdx = Math.floor(this.currentPlaytime / 4) % 4;
-        const progressions = [
+        var pattern = [0, 2, 4, 6, 8, 10, 12, 14];
+        if (pattern.indexOf(step) === -1) return;
+        var chordIdx = Math.floor(this.currentPlaytime / 4) % 4;
+        var progressions = [
           [220.00, 261.63, 329.63, 392.00],
           [261.63, 329.63, 392.00, 523.25],
           [196.00, 246.94, 293.66, 392.00],
           [174.61, 220.00, 261.63, 349.23]
         ];
-        const notes = progressions[chordIdx];
-        const subStep = Math.floor(step / 2) % notes.length;
-        const noteFreq = notes[subStep] * 2;
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-        const delay = this.audioCtx.createDelay();
-        const delayGain = this.audioCtx.createGain();
+        var notes = progressions[chordIdx];
+        var subStep = Math.floor(step / 2) % notes.length;
+        var noteFreq = notes[subStep] * 2;
+        var osc = this.audioCtx.createOscillator();
+        var gain = this.audioCtx.createGain();
+        var delay = this.audioCtx.createDelay();
+        var delayGain = this.audioCtx.createGain();
         osc.type = 'triangle'; osc.frequency.setValueAtTime(noteFreq, time);
-        const lfo = this.audioCtx.createOscillator();
-        const lfoGain = this.audioCtx.createGain();
+        var lfo = this.audioCtx.createOscillator();
+        var lfoGain = this.audioCtx.createGain();
         lfo.frequency.value = 6; lfoGain.gain.value = 5;
         lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
         gain.gain.setValueAtTime(0.18, time);
@@ -330,15 +294,14 @@
       }
     }
 
-    // ─── Data ────────────────────────────────────────────────────────────────────
-    const TRACKS = [
+    var TRACKS = [
       { id: 'track-1', title: 'Synthwave Pulse', artist: 'Neon Horizon', albumArt: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDInOhahOaTj0mweBAhVPN_hqR3V96zTLbyJpa-4xFpjEfrWzj_tI9Rg3pPJMMMSiT0zUncTJK7LgA0zijq2fjALb1ph-5fB98coVlG4Y9GA2xqRgMdNdDqsHh2hkT3IVgqjV2GZ4jdEiIHQSO7LKnwzDK-32clPl_0TjSBuK2YRaajwyvuLLMCawv8PNFBcPICAheYZ0qJFgPhVfQaPZbczQMkuRaRmuAwrmjIRKdXc2NtzT0-1OED8teod6_cbgx4er9yXorutw', duration: 225, bpm: 112, genre: 'Synthwave', likes: 12400, plays: 543000 },
       { id: 'track-2', title: 'Cyberpunk Drift', artist: 'Viper-84', albumArt: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=500&q=80', duration: 180, bpm: 120, genre: 'Outrun / Retro', likes: 8320, plays: 219000 },
       { id: 'track-3', title: 'Retro Sunshine', artist: 'Sunset Blvd', albumArt: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=500&q=80', duration: 210, bpm: 105, genre: 'Dreamwave', likes: 3105, plays: 91400 },
       { id: 'track-4', title: 'Stardust Cruiser', artist: 'Cosmic Cadet', albumArt: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=500&q=80', duration: 240, bpm: 115, genre: 'Synth-Pop', likes: 4725, plays: 146700 },
     ];
 
-    const INITIAL_COMMENTS = [
+    var INITIAL_COMMENTS = [
       { id: 'c1-1', trackId: 'track-1', name: 'Neon Horizon', text: 'The synth pads here were inspired by Blade Runner.', time: 22, avatar: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=100&q=80', type: 'artist', timestampText: '0:22', likes: 412 },
       { id: 'c1-2', trackId: 'track-1', name: 'Neon Horizon', text: 'Written this chorus in my bedroom!', time: 105, avatar: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=100&q=80', type: 'artist', timestampText: '1:45', likes: 580 },
       { id: 'c1-3', trackId: 'track-1', name: 'Neon Horizon', text: 'Watch out for the modular solo coming up.', time: 192, avatar: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=100&q=80', type: 'artist', timestampText: '3:12', likes: 395 },
@@ -357,90 +320,70 @@
       { id: 'c3-3', trackId: 'track-3', name: 'Sarah K.', text: 'Such a warm, nostalgic mood. Obsessed!', time: 140, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80', type: 'friends', timestampText: '2:20', likes: 19 },
     ];
 
-    // ─── Helper ──────────────────────────────────────────────────────────────────
     function formatTime(secs) {
-      const minutes = Math.floor(secs / 60);
-      const seconds = Math.floor(secs % 60);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      var minutes = Math.floor(secs / 60);
+      var seconds = Math.floor(secs % 60);
+      return minutes + ':' + seconds.toString().padStart(2, '0');
     }
 
-    // ─── Waveform Component ──────────────────────────────────────────────────────
     function Waveform({ track, currentTime, comments, activeFilter, onSeek, onSelectComment, selectedComment }) {
-      const containerRef = useRef(null);
-      const barCount = 70;
+      var containerRef = useRef(null);
+      var barCount = 70;
 
-      const barHeights = useMemo(() => {
-        const heights = [];
-        for (let i = 0; i < barCount; i++) {
-          const baseSin = Math.sin(i * 0.22) * 16;
-          const pseudoRand = ((i * 17) % 23) - 10;
-          const h = Math.max(8, 25 + baseSin + pseudoRand);
+      var barHeights = useMemo(function() {
+        var heights = [];
+        for (var i = 0; i < barCount; i++) {
+          var baseSin = Math.sin(i * 0.22) * 16;
+          var pseudoRand = ((i * 17) % 23) - 10;
+          var h = Math.max(8, 25 + baseSin + pseudoRand);
           heights.push(h);
         }
         return heights;
       }, []);
 
-      const progressPercent = useMemo(() => {
+      var progressPercent = useMemo(function() {
         if (!track.duration) return 0;
         return (currentTime / track.duration) * 100;
       }, [currentTime, track.duration]);
 
-      const handleTimelineClick = (e) => {
+      var handleTimelineClick = function(e) {
         if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const pct = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
-        const targetSeconds = (pct / 100) * track.duration;
+        var rect = containerRef.current.getBoundingClientRect();
+        var clickX = e.clientX - rect.left;
+        var pct = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+        var targetSeconds = (pct / 100) * track.duration;
         onSeek(targetSeconds);
       };
 
-      const filteredComments = useMemo(() =>
-        comments.filter((c) => c.trackId === track.id && c.type === activeFilter),
-        [comments, track.id, activeFilter]
-      );
+      var filteredComments = useMemo(function() {
+        return comments.filter(function(c) { return c.trackId === track.id && c.type === activeFilter; });
+      }, [comments, track.id, activeFilter]);
 
       return (
         <div className="relative mb-8 pt-4 pb-2">
-          <div
-            ref={containerRef}
-            onClick={handleTimelineClick}
-            className="relative h-20 flex items-end cursor-pointer"
-          >
-            {/* Background bars */}
+          <div ref={containerRef} onClick={handleTimelineClick} className="relative h-20 flex items-end cursor-pointer">
             <div className="flex items-end justify-between w-full h-full pb-2 opacity-25 select-none pointer-events-none">
-              {barHeights.map((h, i) => (
-                <div key={`bg-${i}`} className="bg-neutral-800 rounded-sm" style={{ width: '3px', height: `${h}px`, margin: '0 1.5px' }} />
-              ))}
+              {barHeights.map(function(h, i) {
+                return <div key={"bg-" + i} className="bg-neutral-800 rounded-sm" style={{ width: '3px', height: h + 'px', margin: '0 1.5px' }} />;
+              })}
             </div>
-            {/* Active orange bars */}
-            <div
-              className="absolute left-0 bottom-0 top-0 overflow-hidden flex items-end pointer-events-none"
-              style={{ width: `${progressPercent}%`, transition: 'width 0.1s linear' }}
-            >
+            <div className="absolute left-0 bottom-0 top-0 overflow-hidden flex items-end pointer-events-none" style={{ width: progressPercent + '%', transition: 'width 0.1s linear' }}>
               <div className="flex items-end justify-between h-full pb-2" style={{ minWidth: '100vw' }}>
-                {barHeights.map((h, i) => (
-                  <div key={`active-${i}`} className="rounded-sm" style={{ width: '3px', height: `${h}px`, margin: '0 1.5px', backgroundColor: '#ff5500', boxShadow: '0 0 8px rgba(255,85,0,0.4)' }} />
-                ))}
+                {barHeights.map(function(h, i) {
+                  return <div key={"active-" + i} className="rounded-sm" style={{ width: '3px', height: h + 'px', margin: '0 1.5px', backgroundColor: '#ff5500', boxShadow: '0 0 8px rgba(255,85,0,0.4)' }} />;
+                })}
               </div>
             </div>
-            {/* Comment markers */}
             <div className="absolute inset-x-0 top-0 bottom-2 pointer-events-none">
-              {filteredComments.map((comment) => {
-                const commentPosPct = (comment.time / track.duration) * 100;
-                const isSelected = selectedComment?.id === comment.id;
+              {filteredComments.map(function(comment) {
+                var commentPosPct = (comment.time / track.duration) * 100;
+                var isSelected = selectedComment && selectedComment.id === comment.id;
                 return (
                   <div
                     key={comment.id}
                     className="absolute rounded-full border-2 border-white bg-white shadow-md cursor-pointer pointer-events-auto select-none"
-                    style={{
-                      width: '32px', height: '32px',
-                      left: `${commentPosPct}%`,
-                      bottom: '8px',
-                      zIndex: isSelected ? 40 : 20,
-                      transform: `translateX(-50%) scale(${isSelected ? 1.2 : 1})`,
-                      transition: 'transform 0.2s'
-                    }}
-                    onClick={(e) => { e.stopPropagation(); onSelectComment(isSelected ? null : comment); }}
+                    style={{ width: '32px', height: '32px', left: commentPosPct + '%', bottom: '8px', zIndex: isSelected ? 40 : 20, transform: 'translateX(-50%) scale(' + (isSelected ? 1.2 : 1) + ')', transition: 'transform 0.2s' }}
+                    onClick={function(e) { e.stopPropagation(); onSelectComment(isSelected ? null : comment); }}
                   >
                     <img src={comment.avatar} alt={comment.name} referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover" />
                     {comment.type === 'artist' && (
@@ -458,17 +401,10 @@
               })}
             </div>
           </div>
-          {/* Floating comment popup */}
           {selectedComment && (
             <div
               className="absolute bg-white border border-neutral-200 p-3 rounded-xl shadow-xl flex flex-col gap-1 animate-fade-in-scale"
-              style={{
-                left: `${Math.min(Math.max((selectedComment.time / track.duration) * 100, 20), 75)}%`,
-                top: '-90px',
-                zIndex: 50,
-                width: '240px',
-                transform: 'translateX(-50%)'
-              }}
+              style={{ left: Math.min(Math.max((selectedComment.time / track.duration) * 100, 20), 75) + '%', top: '-90px', zIndex: 50, width: '240px', transform: 'translateX(-50%)' }}
             >
               <div className="flex items-center gap-2 mb-1">
                 <img className="w-8 h-8 rounded-full border border-neutral-200 object-cover" src={selectedComment.avatar} alt={selectedComment.name} referrerPolicy="no-referrer" />
@@ -476,7 +412,7 @@
                   <p className="font-semibold text-xs text-neutral-800 leading-tight">{selectedComment.name}</p>
                   <p className="text-neutral-500" style={{ fontSize: '10px' }}>at {selectedComment.timestampText}</p>
                 </div>
-                <button onClick={() => onSelectComment(null)} className="ml-auto text-neutral-400 hover:text-neutral-600 cursor-pointer p-0.5">
+                <button onClick={function() { onSelectComment(null); }} className="ml-auto text-neutral-400 hover:text-neutral-600 cursor-pointer p-0.5">
                   <LucideIcon name="X" size={12} />
                 </button>
               </div>
@@ -488,14 +424,13 @@
       );
     }
 
-    // ─── CommentsPanel Component ─────────────────────────────────────────────────
     function CommentsPanel({ track, currentTime, comments, activeFilter, onAddComment, onLikeComment, onSelectComment }) {
-      const [newCommentText, setNewCommentText] = useState('');
-      const [isFocused, setIsFocused] = useState(false);
+      var [newCommentText, setNewCommentText] = useState('');
+      var [isFocused, setIsFocused] = useState(false);
 
-      const filteredComments = comments.filter(c => c.trackId === track.id && c.type === activeFilter);
+      var filteredComments = comments.filter(function(c) { return c.trackId === track.id && c.type === activeFilter; });
 
-      const handleSendComment = (e) => {
+      var handleSendComment = function(e) {
         e.preventDefault();
         if (!newCommentText.trim()) return;
         onAddComment(newCommentText.trim(), Math.floor(currentTime));
@@ -511,19 +446,17 @@
             </h3>
             <p className="font-mono text-neutral-500" style={{ fontSize: '10px' }}>Marker Sync: {formatTime(currentTime)}</p>
           </div>
-          {/* Add comment form */}
           <form onSubmit={handleSendComment} className="relative mb-4">
             <div className="flex gap-2">
               <textarea
                 value={newCommentText}
-                onChange={(e) => setNewCommentText(e.target.value)}
-                onFocus={() => setIsFocused(true)}
-                placeholder={`Say something at ${formatTime(currentTime)}...`}
+                onChange={function(e) { setNewCommentText(e.target.value); }}
+                onFocus={function() { setIsFocused(true); }}
+                placeholder={"Say something at " + formatTime(currentTime) + "..."}
                 rows={isFocused ? 2 : 1}
                 className="flex-1 text-xs p-2.5 bg-neutral-50 text-neutral-800 rounded-lg border border-neutral-200 outline-none transition-all resize-none"
-                style={{ transition: 'border-color 0.2s' }}
-                onMouseEnter={e => e.target.style.borderColor = '#ff5500'}
-                onMouseLeave={e => !isFocused && (e.target.style.borderColor = '#e5e7eb')}
+                onMouseEnter={function(e) { e.target.style.borderColor = '#ff5500'; }}
+                onMouseLeave={function(e) { if (!isFocused) e.target.style.borderColor = '#e5e7eb'; }}
               />
               <button
                 type="submit"
@@ -537,11 +470,10 @@
             {isFocused && (
               <div className="flex justify-between items-center mt-1" style={{ fontSize: '10px' }}>
                 <span className="text-neutral-500">Your comment will stick to timestamp {formatTime(currentTime)}</span>
-                <button type="button" onClick={() => setIsFocused(false)} className="text-neutral-400 hover:text-neutral-600 cursor-pointer">Minimize</button>
+                <button type="button" onClick={function() { setIsFocused(false); }} className="text-neutral-400 hover:text-neutral-600 cursor-pointer">Minimize</button>
               </div>
             )}
           </form>
-          {/* Comments list */}
           <div className="space-y-3 overflow-y-auto scrollbar-thin" style={{ maxHeight: '300px', paddingRight: '6px' }}>
             {filteredComments.length === 0 ? (
               <div className="text-center py-6">
@@ -549,52 +481,53 @@
                 <p className="text-neutral-400 mt-1" style={{ fontSize: '10px' }}>Be the first to add a comment at {formatTime(currentTime)}!</p>
               </div>
             ) : (
-              [...filteredComments].sort((a, b) => b.likes - a.likes).map(c => (
-                <div
-                  key={c.id}
-                  className="flex gap-2.5 items-start bg-neutral-50 hover:bg-neutral-100 p-2.5 rounded-lg border border-neutral-100 transition-colors cursor-pointer"
-                  onClick={() => onSelectComment(c)}
-                >
-                  <img src={c.avatar} alt={c.name} referrerPolicy="no-referrer" className="rounded-full border border-neutral-200 object-cover mt-0.5" style={{ width: '32px', height: '32px', flexShrink: 0 }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline">
-                      <span className="text-xs font-semibold text-neutral-800 flex items-center gap-1 leading-snug">
-                        {c.name}
-                        {c.type === 'artist' && (
-                          <span className="text-white rounded-full font-medium" style={{ backgroundColor: '#ff5500', fontSize: '8px', padding: '1px 4px' }}>Artist</span>
-                        )}
-                      </span>
-                      <span
-                        className="font-semibold font-mono rounded hover:bg-orange-100 transition-all"
-                        style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '1px 4px' }}
-                        onClick={(e) => { e.stopPropagation(); onSelectComment(c); }}
-                      >
-                        {formatTime(c.time)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-600 mt-1 leading-relaxed break-words text-left">{c.text}</p>
-                    <div className="flex items-center gap-3 mt-2 text-neutral-500" style={{ fontSize: '10px' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onLikeComment(c.id); }}
-                        className="flex items-center gap-1 cursor-pointer transition-colors"
-                        style={{ color: c.likedByCurrentUser ? '#ff5500' : undefined }}
-                      >
-                        <LucideIcon name="Heart" size={14} className={c.likedByCurrentUser ? 'fill-current' : ''} color={c.likedByCurrentUser ? '#ff5500' : '#9ca3af'} />
-                        <span>{c.likes} likes</span>
-                      </button>
-                      <span>•</span>
-                      <button onClick={(e) => { e.stopPropagation(); setNewCommentText(`@${c.name} `); setIsFocused(true); }} className="hover:text-neutral-700 cursor-pointer">Reply</button>
+              [...filteredComments].sort(function(a, b) { return b.likes - a.likes; }).map(function(c) {
+                return (
+                  <div
+                    key={c.id}
+                    className="flex gap-2.5 items-start bg-neutral-50 hover:bg-neutral-100 p-2.5 rounded-lg border border-neutral-100 transition-colors cursor-pointer"
+                    onClick={function() { onSelectComment(c); }}
+                  >
+                    <img src={c.avatar} alt={c.name} referrerPolicy="no-referrer" className="rounded-full border border-neutral-200 object-cover mt-0.5" style={{ width: '32px', height: '32px', flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-xs font-semibold text-neutral-800 flex items-center gap-1 leading-snug">
+                          {c.name}
+                          {c.type === 'artist' && (
+                            <span className="text-white rounded-full font-medium" style={{ backgroundColor: '#ff5500', fontSize: '8px', padding: '1px 4px' }}>Artist</span>
+                          )}
+                        </span>
+                        <span
+                          className="font-semibold font-mono rounded hover:bg-orange-100 transition-all"
+                          style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '1px 4px' }}
+                          onClick={function(e) { e.stopPropagation(); onSelectComment(c); }}
+                        >
+                          {formatTime(c.time)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-600 mt-1 leading-relaxed break-words text-left">{c.text}</p>
+                      <div className="flex items-center gap-3 mt-2 text-neutral-500" style={{ fontSize: '10px' }}>
+                        <button
+                          onClick={function(e) { e.stopPropagation(); onLikeComment(c.id); }}
+                          className="flex items-center gap-1 cursor-pointer transition-colors"
+                          style={{ color: c.likedByCurrentUser ? '#ff5500' : undefined }}
+                        >
+                          <LucideIcon name="Heart" size={14} className={c.likedByCurrentUser ? 'fill-current' : ''} color={c.likedByCurrentUser ? '#ff5500' : '#9ca3af'} />
+                          <span>{c.likes} likes</span>
+                        </button>
+                        <span>•</span>
+                        <button onClick={function(e) { e.stopPropagation(); setNewCommentText('@' + c.name + ' '); setIsFocused(true); }} className="hover:text-neutral-700 cursor-pointer">Reply</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
       );
     }
 
-    // ─── PlaylistDrawer Component ────────────────────────────────────────────────
     function PlaylistDrawer({ tracks, currentTrack, onSelectTrack, isOpen, onClose }) {
       if (!isOpen) return null;
       return (
@@ -611,15 +544,15 @@
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-3 pb-20" style={{ gap: '10px', display: 'flex', flexDirection: 'column' }}>
-              {tracks.map((t) => {
-                const isPlaying = t.id === currentTrack.id;
-                const minutes = Math.floor(t.duration / 60);
-                const seconds = Math.floor(t.duration % 60);
-                const displayTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+              {tracks.map(function(t) {
+                var isPlaying = t.id === currentTrack.id;
+                var minutes = Math.floor(t.duration / 60);
+                var seconds = Math.floor(t.duration % 60);
+                var displayTime = minutes + ':' + seconds.toString().padStart(2, '0');
                 return (
                   <div
                     key={t.id}
-                    onClick={() => { onSelectTrack(t); onClose(); }}
+                    onClick={function() { onSelectTrack(t); onClose(); }}
                     className="flex gap-3 p-2 rounded-xl border transition-all cursor-pointer select-none items-center text-left"
                     style={{ borderColor: isPlaying ? '#ff5500' : '#f3f4f6', backgroundColor: isPlaying ? 'rgba(255,85,0,0.05)' : 'white' }}
                   >
@@ -652,66 +585,66 @@
       );
     }
 
-    // ─── Main App Component ──────────────────────────────────────────────────────
     function App() {
-      const [activeTab, setActiveTab] = useState('library');
-      const [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
-      const [currentTrack, setCurrentTrack] = useState(TRACKS[0]);
-      const [comments, setComments] = useState(INITIAL_COMMENTS);
-      const [activeFilter, setActiveFilter] = useState('artist');
-      const [selectedComment, setSelectedComment] = useState(null);
-      const [playerState, setPlayerState] = useState({ isPlaying: false, currentTime: 0, volume: 0.6, isMuted: false, isLooping: false, isShuffled: false });
-      const [searchQuery, setSearchQuery] = useState('');
-      const [selectedGenre, setSelectedGenre] = useState(null);
-      const [followedArtists, setFollowedArtists] = useState([]);
-      const [likedTracks, setLikedTracks] = useState([]);
-      const engineRef = useRef(null);
+      var [activeTab, setActiveTab] = useState('library');
+      var [isPlaylistOpen, setIsPlaylistOpen] = useState(false);
+      var [currentTrack, setCurrentTrack] = useState(TRACKS[0]);
+      var [comments, setComments] = useState(INITIAL_COMMENTS);
+      var [activeFilter, setActiveFilter] = useState('artist');
+      var [selectedComment, setSelectedComment] = useState(null);
+      var [playerState, setPlayerState] = useState({ isPlaying: false, currentTime: 0, volume: 0.6, isMuted: false, isLooping: false, isShuffled: false });
+      var [searchQuery, setSearchQuery] = useState('');
+      var [selectedGenre, setSelectedGenre] = useState(null);
+      var [followedArtists, setFollowedArtists] = useState([]);
+      var [likedTracks, setLikedTracks] = useState([]);
+      var engineRef = useRef(null);
 
-      const getEngine = () => {
+      var getEngine = function() {
         if (!engineRef.current) {
           engineRef.current = new SynthwaveEngine(currentTrack.bpm, currentTrack.duration);
         }
         return engineRef.current;
       };
 
-      useEffect(() => {
+      useEffect(function() {
         if (engineRef.current) engineRef.current.stop();
-        engineRef.current = new SynthwaveEngine(currentTrack.bpm, currentTrack.duration);
-        engineRef.current.registerCallbacks(
-          (step) => {},
-          (time) => { setPlayerState(prev => ({ ...prev, currentTime: Math.min(time, currentTrack.duration) })); }
+        var engine = new SynthwaveEngine(currentTrack.bpm, currentTrack.duration);
+        engineRef.current = engine;
+        engine.registerCallbacks(
+          function(step) {},
+          function(time) { setPlayerState(function(prev) { return Object.assign({}, prev, { currentTime: Math.min(time, currentTrack.duration) }); }); }
         );
-        engineRef.current.setVolume(playerState.isMuted ? 0 : playerState.volume);
-        if (playerState.isPlaying) { engineRef.current.start(0); } 
-        else { setPlayerState(prev => ({ ...prev, currentTime: 0 })); }
+        engine.setVolume(playerState.isMuted ? 0 : playerState.volume);
+        if (playerState.isPlaying) { engine.start(0); }
+        else { setPlayerState(function(prev) { return Object.assign({}, prev, { currentTime: 0 }); }); }
         setSelectedComment(null);
-        return () => { if (engineRef.current) engineRef.current.stop(); };
+        return function() { if (engineRef.current) engineRef.current.stop(); };
       }, [currentTrack.id]);
 
-      useEffect(() => {
-        const engine = getEngine();
+      useEffect(function() {
+        var engine = getEngine();
         if (playerState.isMuted) engine.setVolume(0);
         else engine.setVolume(playerState.volume);
       }, [playerState.volume, playerState.isMuted]);
 
-      const handlePlayPause = () => {
-        const engine = getEngine();
-        const nextPlaying = !playerState.isPlaying;
+      var handlePlayPause = function() {
+        var engine = getEngine();
+        var nextPlaying = !playerState.isPlaying;
         if (nextPlaying) engine.start(playerState.currentTime);
         else engine.stop();
-        setPlayerState(prev => ({ ...prev, isPlaying: nextPlaying }));
+        setPlayerState(function(prev) { return Object.assign({}, prev, { isPlaying: nextPlaying }); });
       };
 
-      const handleSeek = (targetTime) => {
-        const engine = getEngine();
+      var handleSeek = function(targetTime) {
+        var engine = getEngine();
         engine.setTime(targetTime);
-        setPlayerState(prev => ({ ...prev, currentTime: targetTime }));
+        setPlayerState(function(prev) { return Object.assign({}, prev, { currentTime: targetTime }); });
         setSelectedComment(null);
       };
 
-      const handleSkip = (direction) => {
-        const currentIndex = TRACKS.findIndex(t => t.id === currentTrack.id);
-        let nextIndex = currentIndex;
+      var handleSkip = function(direction) {
+        var currentIndex = TRACKS.findIndex(function(t) { return t.id === currentTrack.id; });
+        var nextIndex = currentIndex;
         if (playerState.isShuffled) {
           do { nextIndex = Math.floor(Math.random() * TRACKS.length); } while (nextIndex === currentIndex && TRACKS.length > 1);
         } else {
@@ -721,76 +654,83 @@
         setCurrentTrack(TRACKS[nextIndex]);
       };
 
-      const handleVolumeToggle = () => setPlayerState(prev => ({ ...prev, isMuted: !prev.isMuted }));
+      var handleVolumeToggle = function() {
+        setPlayerState(function(prev) { return Object.assign({}, prev, { isMuted: !prev.isMuted }); });
+      };
 
-      const handleAddComment = (text, time) => {
-        const newComment = {
-          id: `comment-custom-${Date.now()}`,
+      var handleAddComment = function(text, time) {
+        var newComment = {
+          id: 'comment-custom-' + Date.now(),
           trackId: currentTrack.id,
           name: 'You (Listener)',
-          text,
-          time,
+          text: text,
+          time: time,
           avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
           type: activeFilter,
           timestampText: formatTime(time),
           likes: 1,
           likedByCurrentUser: true,
         };
-        setComments(prev => [newComment, ...prev]);
+        setComments(function(prev) { return [newComment].concat(prev); });
         setSelectedComment(newComment);
       };
 
-      const handleLikeComment = (commentId) => {
-        setComments(prev => prev.map(c => {
-          if (c.id === commentId) {
-            const liked = !c.likedByCurrentUser;
-            return { ...c, likes: liked ? c.likes + 1 : c.likes - 1, likedByCurrentUser: liked };
-          }
-          return c;
-        }));
+      var handleLikeComment = function(commentId) {
+        setComments(function(prev) {
+          return prev.map(function(c) {
+            if (c.id === commentId) {
+              var liked = !c.likedByCurrentUser;
+              return Object.assign({}, c, { likes: liked ? c.likes + 1 : c.likes - 1, likedByCurrentUser: liked });
+            }
+            return c;
+          });
+        });
         if (selectedComment && selectedComment.id === commentId) {
-          setSelectedComment(prev => {
+          setSelectedComment(function(prev) {
             if (!prev) return null;
-            const liked = !prev.likedByCurrentUser;
-            return { ...prev, likes: liked ? prev.likes + 1 : prev.likes - 1, likedByCurrentUser: liked };
+            var liked = !prev.likedByCurrentUser;
+            return Object.assign({}, prev, { likes: liked ? prev.likes + 1 : prev.likes - 1, likedByCurrentUser: liked });
           });
         }
       };
 
-      const toggleFollow = (artist) => setFollowedArtists(prev => prev.includes(artist) ? prev.filter(a => a !== artist) : [...prev, artist]);
+      var toggleFollow = function(artist) {
+        setFollowedArtists(function(prev) {
+          return prev.includes(artist) ? prev.filter(function(a) { return a !== artist; }) : [...prev, artist];
+        });
+      };
 
-      const toggleLikeTrack = (trackId) => {
+      var toggleLikeTrack = function(trackId) {
         if (likedTracks.includes(trackId)) {
-          setLikedTracks(prev => prev.filter(tid => tid !== trackId));
+          setLikedTracks(function(prev) { return prev.filter(function(tid) { return tid !== trackId; }); });
         } else {
-          setLikedTracks(prev => [...prev, trackId]);
+          setLikedTracks(function(prev) { return [...prev, trackId]; });
         }
       };
 
-      const filteredTracks = useMemo(() => {
-        return TRACKS.filter(t => {
-          const matchQuery = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.artist.toLowerCase().includes(searchQuery.toLowerCase());
-          const matchGenre = selectedGenre ? t.genre.toLowerCase().includes(selectedGenre.toLowerCase()) : true;
+      var filteredTracks = useMemo(function() {
+        return TRACKS.filter(function(t) {
+          var matchQuery = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.artist.toLowerCase().includes(searchQuery.toLowerCase());
+          var matchGenre = selectedGenre ? t.genre.toLowerCase().includes(selectedGenre.toLowerCase()) : true;
           return matchQuery && matchGenre;
         });
       }, [searchQuery, selectedGenre]);
 
-      const socialFeed = useMemo(() => {
-        return comments.map(c => {
-          const associatedTrack = TRACKS.find(t => t.id === c.trackId) || TRACKS[0];
-          return { ...c, track: associatedTrack };
-        }).sort((a, b) => b.likes - a.likes);
+      var socialFeed = useMemo(function() {
+        return comments.map(function(c) {
+          var associatedTrack = TRACKS.find(function(t) { return t.id === c.trackId; }) || TRACKS[0];
+          return Object.assign({}, c, { track: associatedTrack });
+        }).sort(function(a, b) { return b.likes - a.likes; });
       }, [comments]);
 
-      const tabIndicatorLeft = activeFilter === 'artist' ? '0px' : activeFilter === 'top' ? '146px' : '290px';
-      const tabIndicatorWidth = activeFilter === 'artist' ? '122px' : activeFilter === 'top' ? '120px' : '90px';
+      var tabIndicatorLeft = activeFilter === 'artist' ? '0px' : activeFilter === 'top' ? '146px' : '290px';
+      var tabIndicatorWidth = activeFilter === 'artist' ? '122px' : activeFilter === 'top' ? '120px' : '90px';
 
       return (
         <div className="w-full max-w-md mx-auto min-h-screen bg-neutral-50 text-neutral-900 flex flex-col relative font-sans border-x border-neutral-100 shadow-xl" style={{ paddingBottom: '64px', overflowX: 'hidden' }}>
-          {/* Header */}
           <header className="sticky top-0 bg-white flex justify-between items-center px-4 h-16 z-40 border-b border-neutral-100 animate-fade-in" style={{ backdropFilter: 'blur(12px)' }}>
             <button
-              onClick={() => { if (activeTab !== 'library') setActiveTab('library'); else handleSeek(0); }}
+              onClick={function() { if (activeTab !== 'library') setActiveTab('library'); else handleSeek(0); }}
               className="p-2 hover:bg-neutral-50 rounded-xl cursor-pointer transition-colors active:scale-95"
             >
               <LucideIcon name="ArrowLeft" size={20} color="#404040" />
@@ -801,27 +741,24 @@
               {activeTab === 'feed' && 'Stream Feed'}
               {activeTab === 'search' && 'Search Library'}
             </h1>
-            <button onClick={() => setIsPlaylistOpen(true)} className="p-2 hover:bg-neutral-50 rounded-xl cursor-pointer transition-colors active:scale-95">
+            <button onClick={function() { setIsPlaylistOpen(true); }} className="p-2 hover:bg-neutral-50 rounded-xl cursor-pointer transition-colors active:scale-95">
               <LucideIcon name="MoreVertical" size={20} color="#404040" />
             </button>
           </header>
 
-          {/* Main Content */}
           <main className="flex-1 px-4 flex flex-col pt-4 overflow-y-auto pb-4">
             <div key={activeTab} className="flex flex-col flex-1 tab-enter">
 
-              {/* ── LIBRARY TAB ── */}
               {activeTab === 'library' && (
                 <div className="flex flex-col flex-1">
-                  {/* Album art */}
                   <section className="relative w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-md group select-none" style={{ aspectRatio: '1/1' }}>
-                    <img alt="Album Art" className="w-full h-full object-cover transition-transform duration-700" src={currentTrack.albumArt} referrerPolicy="no-referrer" style={{ groupHover: 'scale(1.05)' }} />
+                    <img alt="Album Art" className="w-full h-full object-cover transition-transform duration-700" src={currentTrack.albumArt} referrerPolicy="no-referrer" />
                     <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.4), transparent)' }}>
                       {playerState.isPlaying && (
                         <div className="flex gap-1.5 items-end h-8 overflow-hidden opacity-90 mb-1">
-                          {Array.from({ length: 40 }).map((_, idx) => (
-                            <div key={`viz-${idx}`} className="rounded-t-sm" style={{ width: '3px', backgroundColor: '#ff5500', height: `${15 + (Math.sin(idx * 0.4) * 8) + (Math.random() * 12)}px`, animation: 'pulse 1s ease-in-out infinite', animationDelay: `${(idx * 0.08) % 1.2}s` }} />
-                          ))}
+                          {Array.from({ length: 40 }).map(function(_, idx) {
+                            return <div key={"viz-" + idx} className="rounded-t-sm" style={{ width: '3px', backgroundColor: '#ff5500', height: (15 + (Math.sin(idx * 0.4) * 8) + (Math.random() * 12)) + 'px', animation: 'pulse 1s ease-in-out infinite', animationDelay: ((idx * 0.08) % 1.2) + 's' }} />;
+                          })}
                         </div>
                       )}
                       <div className="flex items-center gap-1.5">
@@ -831,7 +768,6 @@
                     </div>
                   </section>
 
-                  {/* Title row */}
                   <section className="flex justify-between items-start mt-5 mb-4 text-left">
                     <div className="flex-1 pr-4">
                       <h2 className="font-bold text-xl text-neutral-900 tracking-tight leading-tight uppercase">{currentTrack.title}</h2>
@@ -839,88 +775,79 @@
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => toggleFollow(currentTrack.artist)}
+                        onClick={function() { toggleFollow(currentTrack.artist); }}
                         className="text-xs font-semibold px-2.5 py-1 rounded-lg cursor-pointer transition-all flex items-center gap-1"
-                        style={{
-                          backgroundColor: followedArtists.includes(currentTrack.artist) ? '#f5f5f5' : '#fff7f5',
-                          color: followedArtists.includes(currentTrack.artist) ? '#525252' : '#ff5500',
-                          border: `1px solid ${followedArtists.includes(currentTrack.artist) ? '#e5e5e5' : '#ffe4d6'}`,
-                          fontSize: '10px'
-                        }}
+                        style={{ backgroundColor: followedArtists.includes(currentTrack.artist) ? '#f5f5f5' : '#fff7f5', color: followedArtists.includes(currentTrack.artist) ? '#525252' : '#ff5500', border: '1px solid ' + (followedArtists.includes(currentTrack.artist) ? '#e5e5e5' : '#ffe4d6'), fontSize: '10px' }}
                       >
                         <LucideIcon name={followedArtists.includes(currentTrack.artist) ? 'UserCheck' : 'UserPlus'} size={12} color={followedArtists.includes(currentTrack.artist) ? '#525252' : '#ff5500'} />
                         {followedArtists.includes(currentTrack.artist) ? 'Joined' : 'Join'}
                       </button>
-                      <button onClick={() => toggleLikeTrack(currentTrack.id)} className="p-2 hover:bg-neutral-100 rounded-xl cursor-pointer transition-colors active:scale-90">
+                      <button onClick={function() { toggleLikeTrack(currentTrack.id); }} className="p-2 hover:bg-neutral-100 rounded-xl cursor-pointer transition-colors active:scale-90">
                         <LucideIcon name="Heart" size={20} className={likedTracks.includes(currentTrack.id) ? 'fill-current' : ''} color={likedTracks.includes(currentTrack.id) ? '#ff5500' : '#737373'} />
                       </button>
                     </div>
                   </section>
 
-                  {/* Comment filter tabs */}
                   <section className="relative mb-5">
                     <div className="flex gap-8 border-b border-neutral-100 pb-2 relative select-none">
-                      {[['artist', 'ARTIST COMMENTARY'], ['top', 'POPULAR FEEDBACKS'], ['friends', 'FRIEND SITES']].map(([key, label]) => (
-                        <button key={key} onClick={() => { setActiveFilter(key); setSelectedComment(null); }}
-                          className="font-semibold tracking-wider transition-colors py-1 cursor-pointer"
-                          style={{ fontSize: '10px', color: activeFilter === key ? '#ff5500' : '#a3a3a3' }}
-                        >{label}</button>
-                      ))}
+                      {[['artist', 'ARTIST COMMENTARY'], ['top', 'POPULAR FEEDBACKS'], ['friends', 'FRIEND SITES']].map(function(item) {
+                        var key = item[0]; var label = item[1];
+                        return (
+                          <button key={key} onClick={function() { setActiveFilter(key); setSelectedComment(null); }}
+                            className="font-semibold tracking-wider transition-colors py-1 cursor-pointer"
+                            style={{ fontSize: '10px', color: activeFilter === key ? '#ff5500' : '#a3a3a3' }}
+                          >{label}</button>
+                        );
+                      })}
                     </div>
                     <div className="absolute bottom-0 h-0.5 transition-all duration-300" style={{ left: tabIndicatorLeft, width: tabIndicatorWidth, backgroundColor: '#ff5500' }} />
                   </section>
 
-                  {/* Waveform */}
                   <Waveform track={currentTrack} currentTime={playerState.currentTime} comments={comments} activeFilter={activeFilter} onSeek={handleSeek} onSelectComment={setSelectedComment} selectedComment={selectedComment} />
 
-                  {/* Playback controls */}
                   <section className="bg-white border border-neutral-100 p-4 rounded-2xl flex flex-col items-center shadow-sm">
                     <div className="flex justify-between w-full font-semibold font-mono text-neutral-400 select-none px-1 mb-2.5" style={{ fontSize: '12px' }}>
                       <span>{formatTime(playerState.currentTime)}</span>
                       <span>{formatTime(currentTrack.duration)}</span>
                     </div>
                     <div className="flex items-center justify-between w-full" style={{ maxWidth: '320px' }}>
-                      <button onClick={() => setPlayerState(prev => ({ ...prev, isShuffled: !prev.isShuffled }))} className="cursor-pointer p-2 rounded-lg transition-colors" style={{ color: playerState.isShuffled ? '#ff5500' : '#a3a3a3', backgroundColor: playerState.isShuffled ? '#fff7f5' : 'transparent' }}>
+                      <button onClick={function() { setPlayerState(function(prev) { return Object.assign({}, prev, { isShuffled: !prev.isShuffled }); }); }} className="cursor-pointer p-2 rounded-lg transition-colors" style={{ color: playerState.isShuffled ? '#ff5500' : '#a3a3a3', backgroundColor: playerState.isShuffled ? '#fff7f5' : 'transparent' }}>
                         <LucideIcon name="Shuffle" size={20} />
                       </button>
-                      <button onClick={() => handleSkip('prev')} className="cursor-pointer p-2 rounded-lg transition-colors text-neutral-700 hover:text-brand-orange">
+                      <button onClick={function() { handleSkip('prev'); }} className="cursor-pointer p-2 rounded-lg transition-colors text-neutral-700 hover:text-brand-orange">
                         <LucideIcon name="SkipBack" size={24} />
                       </button>
                       <button onClick={handlePlayPause} className="text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer" style={{ width: '64px', height: '64px', backgroundColor: '#ff5500' }}>
                         <LucideIcon name={playerState.isPlaying ? 'Pause' : 'Play'} size={32} color="white" />
                       </button>
-                      <button onClick={() => handleSkip('next')} className="cursor-pointer p-2 rounded-lg transition-colors text-neutral-700">
+                      <button onClick={function() { handleSkip('next'); }} className="cursor-pointer p-2 rounded-lg transition-colors text-neutral-700">
                         <LucideIcon name="SkipForward" size={24} />
                       </button>
-                      <button onClick={() => setPlayerState(prev => ({ ...prev, isLooping: !prev.isLooping }))} className="cursor-pointer p-2 rounded-lg transition-colors" style={{ color: playerState.isLooping ? '#ff5500' : '#a3a3a3', backgroundColor: playerState.isLooping ? '#fff7f5' : 'transparent' }}>
+                      <button onClick={function() { setPlayerState(function(prev) { return Object.assign({}, prev, { isLooping: !prev.isLooping }); }); }} className="cursor-pointer p-2 rounded-lg transition-colors" style={{ color: playerState.isLooping ? '#ff5500' : '#a3a3a3', backgroundColor: playerState.isLooping ? '#fff7f5' : 'transparent' }}>
                         <LucideIcon name="Repeat" size={20} />
                       </button>
                     </div>
-                    {/* Volume */}
                     <div className="flex gap-2.5 items-center w-full mt-3 px-2">
                       <button onClick={handleVolumeToggle} className="text-neutral-400 hover:text-neutral-600 cursor-pointer">
                         <LucideIcon name={playerState.isMuted || playerState.volume === 0 ? 'VolumeX' : 'Volume2'} size={16} />
                       </button>
                       <input type="range" min="0" max="1" step="0.05" value={playerState.isMuted ? 0 : playerState.volume}
-                        onChange={(e) => { const vol = parseFloat(e.target.value); setPlayerState(prev => ({ ...prev, volume: vol, isMuted: vol === 0 })); }}
+                        onChange={function(e) { var vol = parseFloat(e.target.value); setPlayerState(function(prev) { return Object.assign({}, prev, { volume: vol, isMuted: vol === 0 }); }); }}
                         className="flex-1 accent-brand-orange rounded-lg cursor-pointer appearance-none outline-none"
                         style={{ height: '4px', backgroundColor: '#e5e7eb' }}
                       />
                       <span className="font-mono text-neutral-400" style={{ fontSize: '10px', width: '24px' }}>
-                        {playerState.isMuted ? '0%' : `${Math.floor(playerState.volume * 100)}%`}
+                        {playerState.isMuted ? '0%' : Math.floor(playerState.volume * 100) + '%'}
                       </span>
                     </div>
                   </section>
 
-                  {/* Comments panel */}
                   <CommentsPanel track={currentTrack} currentTime={playerState.currentTime} comments={comments} activeFilter={activeFilter} onAddComment={handleAddComment} onLikeComment={handleLikeComment} onSelectComment={setSelectedComment} />
                 </div>
               )}
 
-              {/* ── HOME TAB ── */}
               {activeTab === 'home' && (
                 <div className="flex flex-col flex-1 gap-5 text-left">
-                  {/* Hero */}
                   <section className="rounded-2xl p-5 text-white shadow-md relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #ea580c, #f59e0b)' }}>
                     <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
                     <div className="relative z-10">
@@ -932,46 +859,46 @@
                     </div>
                   </section>
 
-                  {/* Stations */}
                   <section>
                     <h3 className="font-bold text-sm text-neutral-800 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <LucideIcon name="Compass" size={16} color="#ff5500" /> Explore Stations
                     </h3>
                     <div className="space-y-3">
-                      {TRACKS.map(t => (
-                        <div key={t.id} onClick={() => { setCurrentTrack(t); setActiveTab('library'); }}
-                          className="flex gap-3 p-3 rounded-xl border transition-all cursor-pointer bg-white items-center hover:border-neutral-300"
-                          style={{ borderColor: t.id === currentTrack.id ? '#ff5500' : '#f3f4f6', boxShadow: t.id === currentTrack.id ? '0 0 0 1px rgba(255,85,0,0.2)' : 'none' }}
-                        >
-                          <img src={t.albumArt} alt={t.title} referrerPolicy="no-referrer" className="rounded-lg object-cover" style={{ width: '48px', height: '48px' }} />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-xs text-neutral-800 truncate">{t.title}</h4>
-                            <p className="text-neutral-500 mt-0.5 truncate" style={{ fontSize: '10px' }}>By {t.artist}</p>
-                            <div className="flex gap-2 mt-1.5 items-center">
-                              <span className="text-neutral-400 bg-neutral-100 rounded px-1.5" style={{ fontSize: '9px' }}>{t.genre}</span>
-                              <span className="text-neutral-400 font-mono" style={{ fontSize: '9px' }}>{t.bpm} BPM</span>
+                      {TRACKS.map(function(t) {
+                        return (
+                          <div key={t.id} onClick={function() { setCurrentTrack(t); setActiveTab('library'); }}
+                            className="flex gap-3 p-3 rounded-xl border transition-all cursor-pointer bg-white items-center hover:border-neutral-300"
+                            style={{ borderColor: t.id === currentTrack.id ? '#ff5500' : '#f3f4f6', boxShadow: t.id === currentTrack.id ? '0 0 0 1px rgba(255,85,0,0.2)' : 'none' }}
+                          >
+                            <img src={t.albumArt} alt={t.title} referrerPolicy="no-referrer" className="rounded-lg object-cover" style={{ width: '48px', height: '48px' }} />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-xs text-neutral-800 truncate">{t.title}</h4>
+                              <p className="text-neutral-500 mt-0.5 truncate" style={{ fontSize: '10px' }}>By {t.artist}</p>
+                              <div className="flex gap-2 mt-1.5 items-center">
+                                <span className="text-neutral-400 bg-neutral-100 rounded px-1.5" style={{ fontSize: '9px' }}>{t.genre}</span>
+                                <span className="text-neutral-400 font-mono" style={{ fontSize: '9px' }}>{t.bpm} BPM</span>
+                              </div>
                             </div>
+                            <span className="font-bold flex items-center gap-1 rounded-lg" style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 8px' }}>
+                              <LucideIcon name="TrendingUp" size={12} color="#ff5500" />{((t.plays / 1000) * 0.12).toFixed(1)}k live
+                            </span>
                           </div>
-                          <span className="font-bold flex items-center gap-1 rounded-lg" style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 8px' }}>
-                            <LucideIcon name="TrendingUp" size={12} color="#ff5500" />{((t.plays / 1000) * 0.12).toFixed(1)}k live
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </section>
 
-                  {/* Artists */}
                   <section>
                     <h3 className="font-bold text-sm text-neutral-800 uppercase tracking-wider mb-2.5">Followed Synth Artists</h3>
                     <div className="flex gap-4 overflow-x-auto py-1 select-none">
-                      {[...new Set(TRACKS.map(t => t.artist))].map(artist => {
-                        const isFollowed = followedArtists.includes(artist);
-                        const artwork = TRACKS.find(t => t.artist === artist)?.albumArt || TRACKS[0].albumArt;
+                      {[...new Set(TRACKS.map(function(t) { return t.artist; }))].map(function(artist) {
+                        var isFollowed = followedArtists.includes(artist);
+                        var artwork = (TRACKS.find(function(t) { return t.artist === artist; }) || TRACKS[0]).albumArt;
                         return (
                           <div key={artist} className="flex flex-col items-center flex-shrink-0 bg-white border border-neutral-100 rounded-xl p-2.5 shadow-sm" style={{ width: '96px' }}>
                             <img src={artwork} alt={artist} referrerPolicy="no-referrer" className="rounded-full object-cover border border-neutral-200" style={{ width: '48px', height: '48px' }} />
                             <span className="font-bold text-neutral-800 mt-1.5 truncate max-w-full text-center" style={{ fontSize: '10px' }}>{artist}</span>
-                            <button onClick={() => toggleFollow(artist)} className="mt-2 font-semibold w-full py-0.5 rounded transition-all"
+                            <button onClick={function() { toggleFollow(artist); }} className="mt-2 font-semibold w-full py-0.5 rounded transition-all"
                               style={{ fontSize: '9px', backgroundColor: isFollowed ? '#f5f5f5' : '#ff5500', color: isFollowed ? '#525252' : 'white', border: isFollowed ? '1px solid #e5e5e5' : 'none' }}
                             >{isFollowed ? 'Joined' : 'Join'}</button>
                           </div>
@@ -982,7 +909,6 @@
                 </div>
               )}
 
-              {/* ── FEED TAB ── */}
               {activeTab === 'feed' && (
                 <div className="flex flex-col flex-1 gap-4 text-left">
                   <div className="flex justify-between items-baseline mb-1">
@@ -991,69 +917,77 @@
                     </h3>
                   </div>
                   <div className="space-y-3">
-                    {socialFeed.map(f => (
-                      <div key={f.id}
-                        onClick={() => { const t = TRACKS.find(tr => tr.id === f.trackId) || TRACKS[0]; setCurrentTrack(t); setActiveTab('library'); setTimeout(() => { handleSeek(f.time); setSelectedComment(f); }, 250); }}
-                        className="bg-white border border-neutral-100 rounded-xl p-3 cursor-pointer hover:border-neutral-300 transition-all flex flex-col gap-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <img src={f.avatar} alt={f.name} referrerPolicy="no-referrer" className="rounded-full border border-neutral-200 object-cover" style={{ width: '32px', height: '32px' }} />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-xs text-neutral-800 truncate">{f.name}</h4>
-                            <p className="text-neutral-400 font-mono" style={{ fontSize: '9px' }}>Commented on track</p>
+                    {socialFeed.map(function(f) {
+                      return (
+                        <div key={f.id}
+                          onClick={function() {
+                            var t = TRACKS.find(function(tr) { return tr.id === f.trackId; }) || TRACKS[0];
+                            setCurrentTrack(t);
+                            setActiveTab('library');
+                            setTimeout(function() { handleSeek(f.time); setSelectedComment(f); }, 250);
+                          }}
+                          className="bg-white border border-neutral-100 rounded-xl p-3 cursor-pointer hover:border-neutral-300 transition-all flex flex-col gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <img src={f.avatar} alt={f.name} referrerPolicy="no-referrer" className="rounded-full border border-neutral-200 object-cover" style={{ width: '32px', height: '32px' }} />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-xs text-neutral-800 truncate">{f.name}</h4>
+                              <p className="text-neutral-400 font-mono" style={{ fontSize: '9px' }}>Commented on track</p>
+                            </div>
+                            <span className="font-mono font-bold rounded" style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 6px' }}>At {f.timestampText}</span>
                           </div>
-                          <span className="font-mono font-bold rounded" style={{ fontSize: '10px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 6px' }}>At {f.timestampText}</span>
-                        </div>
-                        <p className="text-xs text-neutral-600 bg-neutral-50 rounded-lg p-2.5 italic text-left">"{f.text}"</p>
-                        <div className="flex items-center gap-2 border-t border-neutral-100 pt-2">
-                          <img src={f.track.albumArt} alt={f.track.title} referrerPolicy="no-referrer" className="rounded object-cover" style={{ width: '32px', height: '32px' }} />
-                          <div className="flex-1 min-w-0 text-left">
-                            <p className="font-semibold text-xs text-neutral-800 truncate">{f.track.title}</p>
-                            <p className="text-neutral-500 truncate" style={{ fontSize: '9px' }}>By {f.track.artist} (Station)</p>
+                          <p className="text-xs text-neutral-600 bg-neutral-50 rounded-lg p-2.5 italic text-left">"{f.text}"</p>
+                          <div className="flex items-center gap-2 border-t border-neutral-100 pt-2">
+                            <img src={f.track.albumArt} alt={f.track.title} referrerPolicy="no-referrer" className="rounded object-cover" style={{ width: '32px', height: '32px' }} />
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="font-semibold text-xs text-neutral-800 truncate">{f.track.title}</p>
+                              <p className="text-neutral-500 truncate" style={{ fontSize: '9px' }}>By {f.track.artist} (Station)</p>
+                            </div>
+                            <button onClick={function(e) { e.stopPropagation(); handleLikeComment(f.id); }}
+                              className="flex items-center gap-1.5 rounded-lg transition-colors"
+                              style={{ fontSize: '10px', padding: '4px 8px', color: f.likedByCurrentUser ? '#ff5500' : '#a3a3a3', backgroundColor: f.likedByCurrentUser ? '#fff7f5' : '#f5f5f5' }}
+                            >
+                              <LucideIcon name="Heart" size={14} className="fill-current" color={f.likedByCurrentUser ? '#ff5500' : '#a3a3a3'} />
+                              {f.likes}
+                            </button>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); handleLikeComment(f.id); }}
-                            className="flex items-center gap-1.5 rounded-lg transition-colors"
-                            style={{ fontSize: '10px', padding: '4px 8px', color: f.likedByCurrentUser ? '#ff5500' : '#a3a3a3', backgroundColor: f.likedByCurrentUser ? '#fff7f5' : '#f5f5f5' }}
-                          >
-                            <LucideIcon name="Heart" size={14} className="fill-current" color={f.likedByCurrentUser ? '#ff5500' : '#a3a3a3'} />
-                            {f.likes}
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* ── SEARCH TAB ── */}
               {activeTab === 'search' && (
                 <div className="flex flex-col flex-1 gap-4 text-left">
                   <section className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"><LucideIcon name="Search" size={16} color="#a3a3a3" /></span>
                     <input type="text" placeholder="Find tracks, artists, stations..." value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={function(e) { setSearchQuery(e.target.value); }}
                       className="w-full text-xs p-3 bg-white text-neutral-800 rounded-xl border border-neutral-200 outline-none transition-colors"
-                      style={{ paddingLeft: '40px', focusBorderColor: '#ff5500' }}
-                      onFocus={e => e.target.style.borderColor = '#ff5500'}
-                      onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                      style={{ paddingLeft: '40px' }}
+                      onFocus={function(e) { e.target.style.borderColor = '#ff5500'; }}
+                      onBlur={function(e) { e.target.style.borderColor = '#e5e7eb'; }}
                     />
-                    {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer text-xs">Clear</button>}
+                    {searchQuery && <button onClick={function() { setSearchQuery(''); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer text-xs">Clear</button>}
                   </section>
                   <section>
                     <h4 className="font-bold tracking-wider text-neutral-400 uppercase mb-2 select-none" style={{ fontSize: '10px' }}>Quick Genre Filter</h4>
                     <div className="flex gap-2 flex-wrap">
-                      {['Synthwave', 'Outrun', 'Dreamwave', 'Cyberpunk', 'Synth-Pop'].map(genre => (
-                        <button key={genre} onClick={() => setSelectedGenre(selectedGenre === genre ? null : genre)}
-                          className="text-xs px-3 py-1.5 rounded-full cursor-pointer transition-all border"
-                          style={{ backgroundColor: selectedGenre === genre ? '#ff5500' : 'white', color: selectedGenre === genre ? 'white' : '#525252', borderColor: selectedGenre === genre ? '#ff5500' : '#e5e7eb' }}
-                        >{genre}</button>
-                      ))}
+                      {['Synthwave', 'Outrun', 'Dreamwave', 'Cyberpunk', 'Synth-Pop'].map(function(genre) {
+                        return (
+                          <button key={genre} onClick={function() { setSelectedGenre(selectedGenre === genre ? null : genre); }}
+                            className="text-xs px-3 py-1.5 rounded-full cursor-pointer transition-all border"
+                            style={{ backgroundColor: selectedGenre === genre ? '#ff5500' : 'white', color: selectedGenre === genre ? 'white' : '#525252', borderColor: selectedGenre === genre ? '#ff5500' : '#e5e7eb' }}
+                          >{genre}</button>
+                        );
+                      })}
                     </div>
                   </section>
                   <section className="flex-1 mt-1">
                     <div className="flex justify-between items-baseline mb-2.5 text-left">
                       <h4 className="font-bold text-xs text-neutral-800 uppercase tracking-wider select-none">Matches Found ({filteredTracks.length})</h4>
-                      {selectedGenre && <button onClick={() => setSelectedGenre(null)} className="cursor-pointer" style={{ fontSize: '10px', color: '#ff5500' }}>Clear Genre Filter</button>}
+                      {selectedGenre && <button onClick={function() { setSelectedGenre(null); }} className="cursor-pointer" style={{ fontSize: '10px', color: '#ff5500' }}>Clear Genre Filter</button>}
                     </div>
                     {filteredTracks.length === 0 ? (
                       <div className="bg-white border border-neutral-100 rounded-xl py-12 text-center">
@@ -1063,53 +997,51 @@
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {filteredTracks.map(t => (
-                          <div key={t.id} onClick={() => { setCurrentTrack(t); setActiveTab('library'); }}
-                            className="flex gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-neutral-300 transition-all cursor-pointer items-center text-left"
-                          >
-                            <img src={t.albumArt} alt={t.title} referrerPolicy="no-referrer" className="rounded-lg object-cover" style={{ width: '48px', height: '48px' }} />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-xs text-neutral-800 truncate">{t.title}</h4>
-                              <p className="text-neutral-500 mt-0.5 truncate" style={{ fontSize: '10px' }}>{t.artist}</p>
-                              <span className="inline-block font-semibold rounded mt-1.5" style={{ fontSize: '9px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 8px' }}>{t.genre}</span>
+                        {filteredTracks.map(function(t) {
+                          return (
+                            <div key={t.id} onClick={function() { setCurrentTrack(t); setActiveTab('library'); }}
+                              className="flex gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-neutral-300 transition-all cursor-pointer items-center text-left"
+                            >
+                              <img src={t.albumArt} alt={t.title} referrerPolicy="no-referrer" className="rounded-lg object-cover" style={{ width: '48px', height: '48px' }} />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-xs text-neutral-800 truncate">{t.title}</h4>
+                                <p className="text-neutral-500 mt-0.5 truncate" style={{ fontSize: '10px' }}>{t.artist}</p>
+                                <span className="inline-block font-semibold rounded mt-1.5" style={{ fontSize: '9px', color: '#ff5500', backgroundColor: '#fff7f5', padding: '2px 8px' }}>{t.genre}</span>
+                              </div>
+                              <LucideIcon name="Play" size={16} color="#a3a3a3" />
                             </div>
-                            <LucideIcon name="Play" size={16} color="#a3a3a3" />
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </section>
                 </div>
               )}
+
             </div>
           </main>
 
-          {/* Bottom Navigation */}
           <nav className="fixed bottom-0 max-w-md w-full z-40 flex justify-around items-center bg-white border-t border-neutral-100 select-none" style={{ height: '64px', boxShadow: '0 -2px 12px rgba(0,0,0,0.02)' }}>
-            {[
-              ['home', 'Home', 'Home'],
-              ['feed', 'Feed', 'Rss'],
-              ['search', 'Search', 'Search'],
-              ['library', 'Library', 'Library'],
-            ].map(([tab, label, icon]) => (
-              <button key={tab} onClick={() => { setActiveTab(tab); setSelectedComment(null); }}
-                className="flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-all active:scale-90"
-                style={{ color: activeTab === tab ? '#ff5500' : '#a3a3a3', fontWeight: activeTab === tab ? '700' : '400' }}
-              >
-                <LucideIcon name={icon} size={20} color={activeTab === tab ? '#ff5500' : '#a3a3a3'} />
-                <span className="mt-0.5" style={{ fontSize: '11px', fontWeight: 'inherit' }}>{label}</span>
-              </button>
-            ))}
+            {[['home', 'Home', 'Home'], ['feed', 'Feed', 'Rss'], ['search', 'Search', 'Search'], ['library', 'Library', 'Library']].map(function(item) {
+              var tab = item[0]; var label = item[1]; var icon = item[2];
+              return (
+                <button key={tab} onClick={function() { setActiveTab(tab); setSelectedComment(null); }}
+                  className="flex flex-col items-center justify-center flex-1 h-full cursor-pointer transition-all active:scale-90"
+                  style={{ color: activeTab === tab ? '#ff5500' : '#a3a3a3', fontWeight: activeTab === tab ? '700' : '400' }}
+                >
+                  <LucideIcon name={icon} size={20} color={activeTab === tab ? '#ff5500' : '#a3a3a3'} />
+                  <span className="mt-0.5" style={{ fontSize: '11px', fontWeight: 'inherit' }}>{label}</span>
+                </button>
+              );
+            })}
           </nav>
 
-          {/* Playlist Drawer */}
-          <PlaylistDrawer tracks={TRACKS} currentTrack={currentTrack} onSelectTrack={setCurrentTrack} isOpen={isPlaylistOpen} onClose={() => setIsPlaylistOpen(false)} />
+          <PlaylistDrawer tracks={TRACKS} currentTrack={currentTrack} onSelectTrack={setCurrentTrack} isOpen={isPlaylistOpen} onClose={function() { setIsPlaylistOpen(false); }} />
         </div>
       );
     }
 
-    // ─── Mount ───────────────────────────────────────────────────────────────────
-    const root = ReactDOM.createRoot(document.getElementById('root'));
+    var root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(React.createElement(App));
   </script>
 </body>
